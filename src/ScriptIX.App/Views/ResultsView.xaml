@@ -1,0 +1,251 @@
+<UserControl x:Class="ScriptIX.App.Views.ResultsView" Foreground="{StaticResource Text}"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ScriptIX.App">
+  <UserControl.Resources>
+    <c:BindingProxy x:Key="Proxy" Data="{Binding}"/>
+  </UserControl.Resources>
+  <Grid Margin="28,24,28,20">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <DockPanel Margin="0,0,0,16">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Content="Compare…" Command="{Binding CompareCommand}" ToolTip="Show what changed since an older run"/>
+        <Button Content="Report details…" Command="{Binding Details.OpenCommand}" ToolTip="Names, logo, pictures and notes for the report"/>
+        <Menu Background="Transparent" VerticalAlignment="Center" Margin="0,0,8,0">
+          <MenuItem Header="Export ▾" Padding="12,7" FontWeight="SemiBold" BorderBrush="{StaticResource Line}" BorderThickness="1" Background="{StaticResource Card}">
+            <MenuItem Header="PDF (.pdf)" Command="{Binding ExportCommand}" CommandParameter="pdf" FontWeight="Normal"/>
+            <MenuItem Header="Word (.docx)" Command="{Binding ExportCommand}" CommandParameter="docx" FontWeight="Normal"/>
+            <MenuItem Header="Excel (.xlsx)" Command="{Binding ExportCommand}" CommandParameter="xlsx" FontWeight="Normal"/>
+            <MenuItem Header="HTML (.html)" Command="{Binding ExportCommand}" CommandParameter="html" FontWeight="Normal"/>
+            <MenuItem Header="Markdown (.md)" Command="{Binding ExportCommand}" CommandParameter="md" FontWeight="Normal"/>
+            <MenuItem Header="Text (.txt)" Command="{Binding ExportCommand}" CommandParameter="txt" FontWeight="Normal"/>
+            <MenuItem Header="CSV (.csv)" Command="{Binding ExportCommand}" CommandParameter="csv" FontWeight="Normal"/>
+            <MenuItem Header="JSON (.json)" Command="{Binding ExportCommand}" CommandParameter="json" FontWeight="Normal"/>
+            <Separator/>
+            <MenuItem Header="XCCDF results (.xml)" Command="{Binding ExportCommand}" CommandParameter="xccdf" FontWeight="Normal"/>
+            <MenuItem Header="ARF (.xml)" Command="{Binding ExportCommand}" CommandParameter="arf" FontWeight="Normal"/>
+            <Separator/>
+            <MenuItem Header="All formats…" Command="{Binding ExportCommand}" CommandParameter="all" FontWeight="Normal"/>
+            <MenuItem Header="Copy history" Command="{Binding CopyHistoryCommand}" FontWeight="Normal"/>
+            <MenuItem Header="Command history only (.txt)" Command="{Binding SaveHistoryCommand}" FontWeight="Normal"/>
+          </MenuItem>
+        </Menu>
+        <Button Style="{StaticResource Primary}" Content="Open results…" Command="{Binding OpenCommand}" Margin="0" ToolTip="Ctrl+R"/>
+      </StackPanel>
+      <StackPanel>
+        <TextBlock Style="{StaticResource H1}" Text="Results"/>
+        <TextBlock Style="{StaticResource Sub}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
+                   Text="{Binding RunInfo}"/>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- tiles + fix bar -->
+    <DockPanel Grid.Row="1" Margin="0,0,0,14" Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                  Visibility="{Binding HasFailures, Converter={StaticResource BoolToVis}}">
+        <Button Content="Re-run failed" Command="{Binding RerunFailedCommand}"
+                ToolTip="Build a new script with exactly the commands that failed"/>
+        <Button Style="{StaticResource Primary}" Content="Fix failed →" Command="{Binding FixFailedCommand}" Margin="0"
+                ToolTip="Build an apply script with the fix commands of the rules that failed"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal">
+        <Border Style="{StaticResource Tile}">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Text="{Binding Summary.Total, StringFormat=N0}"/><TextBlock Style="{StaticResource TileLabel}" Text="COMMANDS"/></StackPanel>
+        </Border>
+        <Border Style="{StaticResource Tile}" BorderBrush="#BBF7D0">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Foreground="{StaticResource Ok}" Text="{Binding Summary.Passed, StringFormat=N0}"/><TextBlock Style="{StaticResource TileLabel}" Text="✓ PASSED"/></StackPanel>
+        </Border>
+        <Border Style="{StaticResource Tile}" BorderBrush="#FECACA">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Foreground="{StaticResource Bad}" Text="{Binding Summary.Failed, StringFormat=N0}"/><TextBlock Style="{StaticResource TileLabel}" Text="✕ FAILED"/></StackPanel>
+        </Border>
+        <Border Style="{StaticResource Tile}">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Foreground="{StaticResource Neutral}" Text="{Binding Summary.Skipped, StringFormat=N0}"/><TextBlock Style="{StaticResource TileLabel}" Text="– SKIPPED"/></StackPanel>
+        </Border>
+        <Border Style="{StaticResource Tile}" Background="{StaticResource AccentSoft}" BorderBrush="#C7D2FE">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Foreground="{StaticResource Accent}" Text="{Binding Summary.PassRate, StringFormat={}{0}%}"/><TextBlock Style="{StaticResource TileLabel}" Text="PASS RATE"/></StackPanel>
+        </Border>
+        <Border Style="{StaticResource Tile}" Background="{StaticResource AccentSoft}" BorderBrush="#C7D2FE" ToolTip="{Binding ScoreTip}"
+                Visibility="{Binding HasScore, Converter={StaticResource BoolToVis}}">
+          <StackPanel><TextBlock Style="{StaticResource TileNumber}" Foreground="{StaticResource Accent}" Text="{Binding ScoreText}"/><TextBlock Style="{StaticResource TileLabel}" Text="SCORE"/></StackPanel>
+        </Border>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- empty state -->
+    <Border Grid.Row="2" Style="{StaticResource CardBorder}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
+        <TextBlock Text="No results yet" Style="{StaticResource H1}" HorizontalAlignment="Center"/>
+        <TextBlock Style="{StaticResource Sub}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,18"
+                   Text="results_*.csv · XCCDF · ARF · OVAL results"/>
+        <Button Style="{StaticResource Primary}" Content="Open results…" Command="{Binding OpenCommand}" HorizontalAlignment="Center" Margin="0"/>
+      </StackPanel>
+    </Border>
+
+    <!-- list + details -->
+    <Grid Grid.Row="2" Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="16"/>
+        <ColumnDefinition Width="400"/>
+      </Grid.ColumnDefinitions>
+
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+          <ComboBox DockPanel.Dock="Left" Width="130" ItemsSource="{Binding Filters}" SelectedItem="{Binding Filter}"
+                    AutomationProperties.Name="Show results" Margin="0,0,10,0"/>
+          <Grid>
+            <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=250}" AutomationProperties.Name="Search results"/>
+            <TextBlock Text="Search ID, title or command…" Foreground="{StaticResource Muted}" Margin="10,0" VerticalAlignment="Center"
+                       IsHitTestVisible="False" Visibility="{Binding Search, Converter={StaticResource EmptyToVis}}"/>
+          </Grid>
+        </DockPanel>
+
+        <DataGrid ItemsSource="{Binding VisibleRows}" SelectedItem="{Binding SelectedRow}" IsReadOnly="True" AutomationProperties.Name="Results">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="#" Binding="{Binding Seq}" Width="46"/>
+            <DataGridTemplateColumn Header="RESULT" Width="128" SortMemberPath="Result" CellTemplate="{StaticResource ResultBadge}"/>
+            <DataGridTemplateColumn Header="ID" Width="140" SortMemberPath="Id">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Id}" Style="{StaticResource CellMono}" ToolTip="{Binding Id}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="WHAT IT CHECKS" Width="*" MinWidth="120" SortMemberPath="Title">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Title}" Style="{StaticResource CellText}" ToolTip="{Binding Title}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="DETAIL" Width="110" SortMemberPath="Detail">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Detail}" Style="{StaticResource CellText}" Foreground="{StaticResource Muted}" FontSize="13"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="BEFORE" Binding="{Binding Before}" Width="96"
+                                Visibility="{Binding Data.IsCompared, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
+            <DataGridTextColumn Header="RC" Binding="{Binding Rc}" Width="46"
+                                Visibility="{Binding Data.IsCompared, Source={StaticResource Proxy}, Converter={StaticResource NotBoolToVis}}"/>
+            <DataGridTextColumn Header="SEC" Binding="{Binding Seconds}" Width="50"
+                                Visibility="{Binding Data.IsCompared, Source={StaticResource Proxy}, Converter={StaticResource NotBoolToVis}}"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </DockPanel>
+
+      <!-- details -->
+      <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+        <Grid>
+          <TextBlock Text="Select a result to see its command and output." Style="{StaticResource Sub}" TextWrapping="Wrap"
+                     Visibility="{Binding HasSelection, Converter={StaticResource NotBoolToVis}}"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+            <StackPanel DataContext="{Binding SelectedRow}">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ResultBadge}" HorizontalAlignment="Left" Focusable="False"/>
+              <TextBlock Text="{Binding Title}" Style="{StaticResource H2}" TextWrapping="Wrap" Margin="0,10,0,2"/>
+              <TextBlock Foreground="{StaticResource Muted}" FontSize="13" TextWrapping="Wrap">
+                <Run Text="{Binding Id, Mode=OneWay}"/>
+                <Run Text="·"/>
+                <Run Text="{Binding Severity, Mode=OneWay}"/>
+                <Run Text="·"/>
+                <Run Text="{Binding Time, Mode=OneWay}"/>
+              </TextBlock>
+
+              <TextBlock Style="{StaticResource Label}" Text="RESULT"/>
+              <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding ResultText, Mode=OneWay}" FontWeight="SemiBold"/>
+                <Run Text="{Binding RunText, Mode=OneWay}" Foreground="{StaticResource Muted}"/>
+              </TextBlock>
+
+              <Grid DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock Style="{StaticResource Label}" Text="YOUR ANSWER"/>
+                  <ComboBox ItemsSource="{Binding Answers}" SelectedItem="{Binding Answer}" AutomationProperties.Name="Your answer"
+                            ToolTip="Answer a manual check, or change a result (for example accept the risk)"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Style="{StaticResource Label}" Text="REASON"/>
+                  <TextBox Text="{Binding AnswerReason, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Reason"/>
+                </StackPanel>
+              </Grid>
+
+              <TextBlock Style="{StaticResource Label}" Text="COMMAND"/>
+              <TextBox Style="{StaticResource CodeBox}" Text="{Binding Command, Mode=OneWay}" IsReadOnly="True" Background="#F8FAFC"
+                       AutomationProperties.Name="Command"/>
+
+              <TextBlock Style="{StaticResource Label}" Text="EXPECTED"/>
+              <TextBox Style="{StaticResource CodeBox}" Text="{Binding Expected, Mode=OneWay, TargetNullValue='(exit code 0)'}" IsReadOnly="True" Background="#F8FAFC"
+                       AutomationProperties.Name="Expected"/>
+
+              <TextBlock Style="{StaticResource Label}" Text="OUTPUT"/>
+              <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                       FontFamily="{StaticResource Mono}" FontSize="12" Padding="10,8" MinHeight="120" VerticalContentAlignment="Top"
+                       Background="{StaticResource CodeBg}" Foreground="{StaticResource CodeText}" BorderThickness="0"
+                       AutomationProperties.Name="Output"/>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- report details -->
+    <Grid Grid.RowSpan="3" Margin="-28,-24,-28,-20" Visibility="{Binding Details.IsOpen, Converter={StaticResource BoolToVis}}">
+      <Border Background="#660B1220"/>
+      <Border Width="640" Margin="0,20" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource Card}" CornerRadius="14" Padding="26,22">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Style="{StaticResource H1}" FontSize="20" Text="Report details"/>
+          <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Style="{StaticResource Primary}" Content="Done" Command="{Binding Details.DoneCommand}" Margin="0"/>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel DataContext="{Binding Details}" Margin="0,0,10,0">
+              <TextBlock Style="{StaticResource Label}" Text="TITLE"/>
+              <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Report title"/>
+              <TextBlock Style="{StaticResource Label}" Text="NAMES (ONE PER LINE)"/>
+              <TextBox Text="{Binding Names, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="66" VerticalContentAlignment="Top"
+                       VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Report names"/>
+              <TextBlock Style="{StaticResource Label}" Text="ORGANIZATION"/>
+              <TextBox Text="{Binding Organization, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Report organization"/>
+              <TextBlock Style="{StaticResource Label}" Text="NOTES"/>
+              <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                       VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Report notes"/>
+
+              <TextBlock Style="{StaticResource Label}" Text="LOGO"/>
+              <StackPanel Orientation="Horizontal">
+                <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="6" Margin="0,0,10,0"
+                        Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}">
+                  <Image Source="{Binding Logo.Data, Converter={StaticResource Thumb}}" MaxHeight="56" MaxWidth="200" AutomationProperties.Name="Logo preview"/>
+                </Border>
+                <Button Content="Choose logo…" Command="{Binding PickLogoCommand}" VerticalAlignment="Center"/>
+                <Button Style="{StaticResource Ghost}" Content="Remove" Command="{Binding RemoveLogoCommand}" VerticalAlignment="Center"
+                        AutomationProperties.Name="Remove logo" Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}"/>
+              </StackPanel>
+
+              <TextBlock Style="{StaticResource Label}" Text="PICTURES"/>
+              <ItemsControl ItemsSource="{Binding Pictures}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <DockPanel Margin="0,0,0,8">
+                      <Border DockPanel.Dock="Left" Width="96" Height="64" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="4" Margin="0,0,10,0">
+                        <Image Source="{Binding Data, Converter={StaticResource Thumb}}"/>
+                      </Border>
+                      <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Remove" Margin="8,0,0,0" VerticalAlignment="Center"
+                              Command="{Binding DataContext.Details.RemovePictureCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                      <Grid VerticalAlignment="Center">
+                        <TextBox Text="{Binding Caption, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Picture caption"/>
+                        <TextBlock Text="Caption" Margin="10,0" VerticalAlignment="Center" Foreground="#94A3B8" IsHitTestVisible="False"
+                                   Visibility="{Binding Caption, Converter={StaticResource EmptyToVis}}"/>
+                      </Grid>
+                    </DockPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Content="Add picture…" Command="{Binding AddPictureCommand}" HorizontalAlignment="Left"/>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

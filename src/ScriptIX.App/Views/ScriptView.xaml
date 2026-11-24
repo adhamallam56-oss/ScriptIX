@@ -1,0 +1,259 @@
+<UserControl x:Class="ScriptIX.App.Views.ScriptView" Foreground="{StaticResource Text}"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Margin="28,24,28,20">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <DockPanel Margin="0,0,0,16">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                  Visibility="{Binding HasScript, Converter={StaticResource BoolToVis}}">
+        <Button Content="Copy ready to paste" Command="{Binding CopyPasteBlockCommand}" ToolTip="Copies one block for your SSH session: writes the script on the server, checks its SHA-256 and previews it with --dry-run. No scp needed."/>
+        <Button Content="Run over SSH…" Command="{Binding SshCommand}" ToolTip="Runs the selected script on your servers with Windows' own ssh, in a console window"/>
+        <Button Content="✉ Email…" Command="{Binding EmailCommand}" ToolTip="Opens a ready e-mail with the script(s) attached in your own mail app. You choose the subject and text, or let ScriptIX fill them in."/>
+        <Button Content="Packages…" Command="{Binding SavePackagesCommand}" ToolTip="Saves .deb, .rpm and AIX files with the scriptix command and these scripts"/>
+        <Menu Background="Transparent" Margin="0,0,8,0" VerticalAlignment="Center">
+          <MenuItem Header="More ▾" Padding="12,7" FontWeight="SemiBold" BorderBrush="{StaticResource Line}" BorderThickness="1" Background="{StaticResource Card}">
+            <MenuItem Header="Copy script text" Command="{Binding CopyCommand}" FontWeight="Normal"/>
+            <MenuItem Header="Save all to folder…" Command="{Binding SaveAllCommand}" FontWeight="Normal"/>
+          </MenuItem>
+        </Menu>
+        <Button Style="{StaticResource Primary}" Command="{Binding SaveCommand}" Margin="0" ToolTip="Ctrl+S">
+          <TextBlock Text="Save .sh…"/>
+        </Button>
+      </StackPanel>
+      <StackPanel>
+        <TextBlock Style="{StaticResource H1}" Text="Your script"/>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- empty state -->
+    <Border Grid.Row="1" Style="{StaticResource CardBorder}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="480">
+        <TextBlock Text="No script yet" Style="{StaticResource H1}" HorizontalAlignment="Center"/>
+        <TextBlock Style="{StaticResource Sub}" TextAlignment="Center" Margin="0,6,0,18"
+                   Text="Pick rules or type commands, then Create script."/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+          <Button Style="{StaticResource Primary}" Content="Go to rules" Command="{Binding DataContext.GoToCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="0"/>
+          <Button Content="Type my own commands" Command="{Binding DataContext.GoToCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="1" Margin="0"/>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Grid Grid.Row="1" Visibility="{Binding HasScript, Converter={StaticResource BoolToVis}}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="300"/>
+        <ColumnDefinition Width="16"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- left: scripts, options, notes -->
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Label}" Text="SCRIPTS" Margin="2,0,0,6"/>
+          <ListBox ItemsSource="{Binding Scripts}" SelectedItem="{Binding SelectedScript}" BorderThickness="0" Background="Transparent"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Generated scripts">
+            <ListBox.ItemContainerStyle>
+              <Style TargetType="ListBoxItem">
+                <Setter Property="Margin" Value="0,0,0,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                  <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                      <Border x:Name="Bd" Background="{StaticResource Card}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="10" Padding="14,11">
+                        <ContentPresenter/>
+                      </Border>
+                      <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="#C7D2FE"/></Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                          <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                          <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentSoft}"/>
+                        </Trigger>
+                      </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                  </Setter.Value>
+                </Setter>
+              </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel>
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="✓ saved" Foreground="{StaticResource Ok}" FontSize="12.5" FontWeight="SemiBold"
+                               Visibility="{Binding Saved, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                  </DockPanel>
+                  <TextBlock Text="{Binding Purpose}" Foreground="{StaticResource Muted}" FontSize="13" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding CountText}" Foreground="{StaticResource Text}" FontSize="13" Margin="0,3,0,0"/>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Border Style="{StaticResource CardBorder}" Margin="0,6,0,0">
+            <StackPanel>
+              <TextBlock Style="{StaticResource H2}" Text="Options"/>
+              <CheckBox Margin="0,12,0,0" IsChecked="{Binding StopOnFail}" Content="Stop at the first failure"
+                        ToolTip="The rest are SKIPPED. Same as running with --stop-on-fail."/>
+              <CheckBox Margin="0,8,0,0" IsChecked="{Binding Redact}" Content="Hide secrets in logs"
+                        ToolTip="Values after password=, token=, secret= are written as *****"/>
+              <TextBlock Style="{StaticResource Label}" Text="TIME LIMIT PER COMMAND"/>
+              <ComboBox ItemsSource="{Binding TimeoutChoices}" SelectedItem="{Binding TimeoutSeconds}" AutomationProperties.Name="Time limit per command">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate><TextBlock Text="{Binding Converter={StaticResource TimeoutText}}"/></DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource CardBorder}" Margin="0,14,0,0" BorderBrush="#FDE68A" Background="#FFFDF5"
+                  Visibility="{Binding HasNotes, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource H2}" Text="Portability notes" Foreground="{StaticResource Warn}"/>
+              <ItemsControl ItemsSource="{Binding Notes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,6"/></DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- right: hash, steps, code -->
+      <Grid Grid.Column="2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Style="{StaticResource CardBorder}" Padding="14,10">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Copy" Command="{Binding CopyHashCommand}" Margin="0"/>
+            <TextBlock Text="SHA-256" FontWeight="SemiBold" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <TextBox Text="{Binding SelectedScript.Sha256, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Padding="0"
+                     FontSize="13.5" VerticalAlignment="Center" Background="Transparent"
+                     ToolTip="sh SCRIPT --verify on the server prints the same value" AutomationProperties.Name="SHA-256 of the script"/>
+          </DockPanel>
+        </Border>
+
+        <!-- e-mail draft -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="0,12,0,12" Padding="16,12"
+                Visibility="{Binding EmailOpen, Converter={StaticResource BoolToVis}}">
+          <StackPanel>
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Close" Command="{Binding EmailCloseCommand}" Margin="0"/>
+              <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Fill in for me" Command="{Binding EmailFillCommand}"
+                      ToolTip="Writes the subject and text for you: what each script does, its SHA-256 and how to run it"/>
+              <TextBlock Style="{StaticResource H2}" Text="Email the script" VerticalAlignment="Center"/>
+            </DockPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+              <TextBlock Text="To" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Column="1" Text="{Binding EmailTo, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"
+                       ToolTip="Optional. Separate addresses with commas. You can also fill it in your mail app." AutomationProperties.Name="Email to"/>
+              <TextBlock Grid.Row="1" Text="Subject" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EmailSubject, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" AutomationProperties.Name="Email subject"/>
+              <TextBlock Grid.Row="2" Text="Message" VerticalAlignment="Top" Margin="0,4,0,0" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EmailBody, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                       Height="150" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" FontSize="13.5" AutomationProperties.Name="Email message"/>
+            </Grid>
+            <WrapPanel Margin="70,8,0,0">
+              <CheckBox IsChecked="{Binding EmailAll}" Content="Attach all scripts (apply, check, undo)" Margin="0,0,16,0"
+                        ToolTip="Off: only the script selected on the left"/>
+              <CheckBox IsChecked="{Binding EmailAsTxt}" Content="Attach as .sh.txt"
+                        ToolTip="Some company mail filters remove .sh attachments. The receiver renames the file; --verify still checks it."/>
+            </WrapPanel>
+            <StackPanel Orientation="Horizontal" Margin="70,10,0,0">
+              <Button Style="{StaticResource Primary}" Content="Open in mail app" Command="{Binding EmailOpenCommand}"/>
+              <Button Content="Save .eml…" Command="{Binding EmailSaveCommand}" ToolTip="Save the draft and open it later, or on another PC"/>
+              <Button Content="Open without attachment" Command="{Binding EmailMailToCommand}" Margin="0"
+                      ToolTip="For mail apps that can't open .eml files (for example webmail set as default). Attach the saved .sh yourself."/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- run over SSH -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="0,12,0,12" Padding="16,12"
+                Visibility="{Binding SshOpen, Converter={StaticResource BoolToVis}}">
+          <StackPanel>
+            <DockPanel Margin="0,0,0,6">
+              <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Close" Command="{Binding SshCloseCommand}" Margin="0"/>
+              <TextBlock Style="{StaticResource H2}" Text="Run over SSH" VerticalAlignment="Center"/>
+            </DockPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions>
+              <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+              <TextBlock Text="Servers" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SshHosts, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"
+                       ToolTip="One or more names or IP addresses, separated by spaces or commas" AutomationProperties.Name="SSH servers"/>
+              <TextBlock Grid.Row="1" Text="User" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SshUser, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" AutomationProperties.Name="SSH user"/>
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="Port" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SshPort, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" AutomationProperties.Name="SSH port"/>
+              <TextBlock Grid.Row="2" Text="Key file" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SshKey, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="SSH key file"
+                       ToolTip="Optional. Leave empty to use a password or your usual keys."/>
+              <Button Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Content="Browse…" Command="{Binding SshKeyCommand}" Margin="8,0,0,0" AutomationProperties.Name="Browse for a key file"/>
+            </Grid>
+            <CheckBox Margin="70,8,0,0" IsChecked="{Binding SshSudo}" Content="Use sudo" ToolTip="For a user that is not root"/>
+            <StackPanel Orientation="Horizontal" Margin="70,10,0,0">
+              <Button Style="{StaticResource Primary}" Content="Run" Command="{Binding SshRunCommand}" ToolTip="Type the password in the console window. ScriptIX never sees it." AutomationProperties.Name="Run over SSH now"/>
+              <Button Content="Open the results" Command="{Binding SshResultsCommand}" Margin="0"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Expander Grid.Row="1" IsExpanded="True" Margin="0,12,0,12" Visibility="{Binding ShowSteps, Converter={StaticResource BoolToVis}}">
+          <Expander.Header>
+            <TextBlock Text="How to run it on the server" FontWeight="SemiBold" FontSize="15"/>
+          </Expander.Header>
+          <Border Style="{StaticResource CardBorder}" Margin="0,8,0,0" Padding="12,8">
+            <ItemsControl ItemsSource="{Binding Steps}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <DockPanel Margin="0,4">
+                    <Border DockPanel.Dock="Left" Width="24" Height="24" CornerRadius="12" Background="{StaticResource AccentSoft}" VerticalAlignment="Top" Margin="0,2,12,0">
+                      <TextBlock Text="{Binding Number}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="{StaticResource Accent}" FontSize="13"/>
+                    </Border>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Copy" VerticalAlignment="Center" Margin="8,0,0,0"
+                            Command="{Binding DataContext.CopyTextCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding Command}"/>
+                    <StackPanel>
+                      <TextBlock Text="{Binding Label}" FontSize="13.5" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+                      <Border Background="#F1F5F9" CornerRadius="6" Padding="9,5" Margin="0,4,0,0" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding Command}" FontSize="14" TextWrapping="Wrap"/>
+                      </Border>
+                    </StackPanel>
+                  </DockPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+        </Expander>
+
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" Background="{StaticResource CodeBg}" BorderBrush="#1E293B">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" BorderBrush="#1E293B" BorderThickness="0,0,0,1" Padding="14,8">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Foreground="#64748B" FontSize="13"
+                           Text="{Binding SelectedScript.LineCount, StringFormat='{}{0:N0} lines · LF · UTF-8'}"/>
+                <TextBlock Text="{Binding SelectedScript.FileName}" Foreground="#94A3B8" FontFamily="{StaticResource Mono}" FontSize="12"/>
+              </DockPanel>
+            </Border>
+            <TextBox Text="{Binding SelectedScript.Content, Mode=OneWay}" IsReadOnly="True" IsReadOnlyCaretVisible="True"
+                     FontFamily="{StaticResource Mono}" FontSize="12.5" Padding="14,10" TextWrapping="NoWrap"
+                     Background="Transparent" Foreground="{StaticResource CodeText}" BorderThickness="0"
+                     SelectionBrush="#4F46E5" CaretBrush="#A5B4FC" VerticalContentAlignment="Top"
+                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.Name="Script content"/>
+          </DockPanel>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

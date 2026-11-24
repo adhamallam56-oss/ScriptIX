@@ -1,0 +1,197 @@
+<Window x:Class="ScriptIX.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="clr-namespace:ScriptIX.App.Views"
+        xmlns:b="clr-namespace:ScriptIX.App.Behaviors"
+        Title="{Binding Title}" Height="820" Width="1360" MinHeight="600" MinWidth="1000"
+        WindowStartupLocation="CenterScreen" FontFamily="{StaticResource Ui}" FontSize="14.5"
+        Background="{StaticResource Page}" Foreground="{StaticResource Text}"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display"
+        b:FileDrop.Command="{Binding OpenPathCommand}">
+
+  <Window.InputBindings>
+    <KeyBinding Key="O" Modifiers="Control" Command="{Binding Rules.ImportCommand}"/>
+    <KeyBinding Key="R" Modifiers="Control" Command="{Binding Results.OpenCommand}"/>
+    <KeyBinding Key="S" Modifiers="Control" Command="{Binding Script.SaveCommand}"/>
+    <KeyBinding Key="F1" Command="{Binding GoToCommand}" CommandParameter="5"/>
+    <KeyBinding Key="Escape" Command="{Binding EscapeCommand}"/>
+  </Window.InputBindings>
+
+<Grid>
+    <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}" BorderThickness="0" Padding="0"
+              KeyboardNavigation.TabNavigation="Local">
+    <TabControl.Template>
+      <ControlTemplate TargetType="TabControl">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="236"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- left rail -->
+          <DockPanel Background="{StaticResource Nav}">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="22,24,18,26">
+              <Border Width="40" Height="40" CornerRadius="11" Background="{StaticResource Brand}">
+                <TextBlock Text="&gt;_" Foreground="White" FontFamily="{StaticResource Mono}" FontWeight="Bold"
+                           FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock FontSize="21" FontWeight="Bold" Foreground="White">
+                  <Run Text="Script"/><Run Text="IX" Foreground="#7DD3FC"/>
+                </TextBlock>
+                <TextBlock Text="Linux &amp; AIX hardening" Foreground="{StaticResource NavMuted}" FontSize="12.5"/>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Margin="24,0,20,18">
+              <TextBlock Foreground="{StaticResource NavMuted}" FontSize="12">
+                <Run Text="{Binding DataContext.Version, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+              </TextBlock>
+            </StackPanel>
+
+            <StackPanel IsItemsHost="True"/>
+          </DockPanel>
+
+          <!-- page + status bar -->
+          <DockPanel Grid.Column="1">
+            <Border DockPanel.Dock="Bottom" Background="{StaticResource Card}" BorderBrush="{StaticResource Line}"
+                    BorderThickness="0,1,0,0" Padding="20,7">
+              <DockPanel>
+                <ProgressBar DockPanel.Dock="Right" Width="140" Height="5" IsIndeterminate="True"
+                             Visibility="{Binding DataContext.Rules.IsBusy, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                <TextBlock Text="{Binding DataContext.StatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis"
+                           AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="Status"/>
+              </DockPanel>
+            </Border>
+            <!-- this exact name lets screen readers (UI Automation) see the page content -->
+            <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
+          </DockPanel>
+        </Grid>
+      </ControlTemplate>
+    </TabControl.Template>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Step 1: Rules">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Rules" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:RulesView DataContext="{Binding Rules}"/>
+    </TabItem>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Step 1 alternative: my own commands">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="My own commands" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:ManualView DataContext="{Binding Manual}"/>
+    </TabItem>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Step 2: Script">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Script" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:ScriptView DataContext="{Binding Script}"/>
+    </TabItem>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Step 3: Servers">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Servers" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:ServersView DataContext="{Binding Servers}"/>
+    </TabItem>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Step 4: Results">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="4" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Results" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:ResultsView DataContext="{Binding Results}"/>
+    </TabItem>
+
+    <TabItem Style="{StaticResource NavTab}" AutomationProperties.Name="Help">
+      <TabItem.Header>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="26" Height="26" CornerRadius="13" Background="#24324F" Margin="0,0,12,0">
+            <TextBlock Text="?" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Help" FontWeight="SemiBold" FontSize="15"/>
+          </StackPanel>
+        </StackPanel>
+      </TabItem.Header>
+      <v:HelpView/>
+    </TabItem>
+  </TabControl>
+
+  <!-- intro tutorial -->
+  <Grid DataContext="{Binding Tutorial}" Visibility="{Binding Visible, Converter={StaticResource BoolToVis}}">
+    <Border Background="#990B1220"/>
+    <Border Width="460" Background="{StaticResource Card}" CornerRadius="16" Padding="32,28,32,22"
+            HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Intro">
+      <Border.Effect><DropShadowEffect BlurRadius="40" ShadowDepth="8" Opacity="0.35"/></Border.Effect>
+      <StackPanel>
+        <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource Brand}" HorizontalAlignment="Left">
+          <TextBlock Text="{Binding Current.Icon}" Foreground="White" FontWeight="Bold" FontSize="18"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <TextBlock Text="{Binding Current.Title}" Style="{StaticResource H1}" Margin="0,18,0,8"/>
+        <TextBlock Text="{Binding Current.Text}" TextWrapping="Wrap" FontSize="15" LineHeight="21" Foreground="{StaticResource Muted}" MinHeight="44"/>
+        <DockPanel Margin="0,26,0,0">
+          <ItemsControl ItemsSource="{Binding Dots}" VerticalAlignment="Center" Focusable="False">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border x:Name="Dot" Width="7" Height="7" CornerRadius="4" Margin="0,0,6,0" Background="{StaticResource Line}"/>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding}" Value="True">
+                    <Setter TargetName="Dot" Property="Background" Value="{StaticResource Accent}"/>
+                    <Setter TargetName="Dot" Property="Width" Value="20"/>
+                  </DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Style="{StaticResource Ghost}" Content="Skip" Command="{Binding SkipCommand}"/>
+            <Button Content="Back" Command="{Binding BackCommand}"/>
+            <Button Style="{StaticResource Primary}" Content="{Binding NextText}" Command="{Binding NextCommand}" Margin="0" IsDefault="True"/>
+          </StackPanel>
+        </DockPanel>
+      </StackPanel>
+    </Border>
+  </Grid>
+</Grid>
+</Window>

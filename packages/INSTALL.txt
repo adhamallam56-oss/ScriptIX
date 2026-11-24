@@ -1,0 +1,22 @@
+ScriptIX 2.4.1 packages: the scriptix command, with no scripts inside.
+Run as root. Nothing runs by itself after installing.
+
+Debian, Ubuntu:                  dpkg -i scriptix_2.4.1-20261124.202314_all.deb
+RHEL, Rocky, Alma, Oracle, SUSE: rpm -Uvh scriptix-2.4.1-20261124.202314.noarch.rpm
+AIX 7.1 or newer, rpm:           rpm -Uvh scriptix-2.4.1-20261124.202314.aix6.1.noarch.rpm
+AIX 7.1 or newer, installp:      sh scriptix-2.4.2519.1223-aix.sh --install
+AIX .bff file (smit, NIM):       sh scriptix-2.4.2519.1223-aix.sh
+
+On AIX use the rpm or the installp one, not both.
+The .bff can only be made on AIX, so the -aix.sh file makes it there.
+
+Then:
+  scriptix add FILE.sh        add a script made in ScriptIX
+  scriptix scan               run the check scripts
+  scriptix results            what failed
+  scriptix help               everything else
+
+Or make packages with your scripts inside: ScriptIX, Script page, Packages...
+
+The packages are not signed. Compare SHA256SUMS.
+The AIX files were never tested on a real AIX. Try them on a test server first.

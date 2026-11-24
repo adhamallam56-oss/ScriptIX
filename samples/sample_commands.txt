@@ -1,0 +1,12 @@
+# Kernel address space randomisation is on
+sysctl -n kernel.randomize_va_space ## expect: 2 ## os: linux
+# Nothing listens on the telnet port
+netstat -an | grep -c '[.:]23 .*LISTEN' ## expect-exact: 0
+# SSH root login is off
+grep -i '^PermitRootLogin' /etc/ssh/sshd_config ## expect-regex: [Nn][Oo]$
+# AIX: root can't log in remotely
+lsuser -a rlogin root ## expect: rlogin=false ## os: aix
+# Slow command with its own time limit
+find /etc -name '*.conf' -perm -o+w ## expect-exact: ## timeout: 120
+# Lines without a marker pass when the exit code is 0
+id -un

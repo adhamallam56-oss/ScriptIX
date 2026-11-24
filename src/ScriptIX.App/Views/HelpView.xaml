@@ -1,0 +1,94 @@
+<UserControl x:Class="ScriptIX.App.Views.HelpView" Foreground="{StaticResource Text}"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+    <DataTemplate x:Key="Row">
+      <Border BorderBrush="#EEF1F6" BorderThickness="0,1,0,0" Padding="0,11">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="270"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="{Binding Code}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,20,0"/>
+          <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+        </Grid>
+      </Border>
+    </DataTemplate>
+    <DataTemplate x:Key="WideRow">
+      <Border BorderBrush="#EEF1F6" BorderThickness="0,1,0,0" Padding="0,11">
+        <StackPanel>
+          <TextBlock Text="{Binding Code}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding Text}" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+    <DataTemplate x:Key="Topic">
+      <StackPanel Margin="0,0,0,28">
+        <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+        <ItemsControl x:Name="Rows" ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource Row}" Focusable="False"/>
+      </StackPanel>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Wide}" Value="True"><Setter TargetName="Rows" Property="ItemTemplate" Value="{StaticResource WideRow}"/></DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid Margin="28,24,28,20">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="200"/>
+      <ColumnDefinition Width="20"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <TextBlock Style="{StaticResource H1}" Text="Help" Margin="0,0,0,16"/>
+
+    <DockPanel Grid.Row="1">
+      <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Left">
+        <Button Style="{StaticResource Ghost}" Content="Replay intro" HorizontalAlignment="Left" Command="{Binding Tutorial.StartCommand}"/>
+        <Button Style="{StaticResource Ghost}" Content="Open log folder" HorizontalAlignment="Left" Command="{Binding OpenLogFolderCommand}"/>
+      </StackPanel>
+      <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+        <TextBox Text="{Binding Help.Search, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search help"/>
+        <TextBlock Text="Search…" Foreground="{StaticResource Muted}" Margin="10,0" VerticalAlignment="Center"
+                   IsHitTestVisible="False" Visibility="{Binding Help.Search, Converter={StaticResource EmptyToVis}}"/>
+      </Grid>
+      <ListBox ItemsSource="{Binding Help.Topics}" SelectedItem="{Binding Help.Topic}" DisplayMemberPath="Title" BorderThickness="0" Background="Transparent"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Help topics">
+        <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                  <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,1">
+                    <ContentPresenter/>
+                  </Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover}"/></Trigger>
+                    <Trigger Property="IsSelected" Value="True">
+                      <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentSoft}"/>
+                      <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                      <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </ListBox.ItemContainerStyle>
+      </ListBox>
+    </DockPanel>
+
+    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+        <ItemsControl ItemsSource="{Binding Help.Shown}" ItemTemplate="{StaticResource Topic}" Margin="28,24,28,0" Focusable="False"/>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

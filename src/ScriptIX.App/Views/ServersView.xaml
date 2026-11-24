@@ -1,0 +1,206 @@
+<UserControl x:Class="ScriptIX.App.Views.ServersView" Foreground="{StaticResource Text}"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="clr-namespace:ScriptIX.App.Behaviors">
+  <UserControl.Resources>
+    <Style x:Key="EditBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+      <Setter Property="Padding" Value="4,2"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{StaticResource Line}"/></Trigger>
+      </Style.Triggers>
+    </Style>
+  </UserControl.Resources>
+  <Grid Margin="28,24,28,20">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <DockPanel Margin="0,0,0,16">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Content="Add servers…" Command="{Binding AddOpenCommand}"/>
+        <Button Content="Package…" Command="{Binding PackageCommand}" ToolTip="Install the scriptix command on servers, or save the package files"/>
+        <StackPanel Orientation="Horizontal" Visibility="{Binding HasServers, Converter={StaticResource BoolToVis}}">
+          <Button Content="Side by side" Command="{Binding MatrixCommand}" ToolTip="The last results of the ticked servers, rule by rule"/>
+          <ComboBox Width="190" ItemsSource="{Binding Scripts}" SelectedItem="{Binding SelectedScript}" DisplayMemberPath="FileName" Margin="0,0,8,0"
+                    IsEnabled="{Binding HasScripts}" AutomationProperties.Name="Script to run" ToolTip="The scripts from the Script page"/>
+          <Button Style="{StaticResource Primary}" Content="Run on ticked" Command="{Binding RunCommand}" Margin="0"
+                  ToolTip="Runs the script on every ticked server over SSH and brings the results back"/>
+        </StackPanel>
+      </StackPanel>
+      <StackPanel>
+        <TextBlock Style="{StaticResource H1}" Text="Servers"/>
+        <TextBlock Style="{StaticResource Sub}" Margin="0,2,0,0" Text="{Binding TickedText}" Visibility="{Binding HasServers, Converter={StaticResource BoolToVis}}"/>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- add -->
+    <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="0,0,0,14" Visibility="{Binding AddOpen, Converter={StaticResource BoolToVis}}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,6">
+          <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Close" Command="{Binding CloseCommand}" Margin="0"/>
+          <TextBlock Style="{StaticResource H2}" Text="Add servers" VerticalAlignment="Center"/>
+        </DockPanel>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="70"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="80"/>
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="Servers" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+          <TextBox Grid.Column="1" Grid.ColumnSpan="5" Text="{Binding AddHosts, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"
+                   ToolTip="Names or IP addresses, separated by spaces or commas" AutomationProperties.Name="Servers to add"/>
+          <TextBlock Grid.Row="1" Text="Group" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AddGroup, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" ToolTip="Optional, for example AIX or Production" AutomationProperties.Name="Group"/>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="User" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource Muted}"/>
+          <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding AddUser, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" AutomationProperties.Name="User"/>
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Port" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource Muted}"/>
+          <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding AddPort, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" AutomationProperties.Name="Port"/>
+          <TextBlock Grid.Row="2" Text="Key file" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+          <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding AddKey, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Key file"
+                   ToolTip="Optional. Leave empty to use a password or your usual keys. Passwords are never saved."/>
+          <Button Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Content="Browse…" Command="{Binding KeyCommand}" Margin="8,0,0,0" AutomationProperties.Name="Browse for a key file"/>
+        </Grid>
+        <StackPanel Orientation="Horizontal" Margin="70,10,0,0">
+          <Button Style="{StaticResource Primary}" Content="Add" Command="{Binding AddCommand}" AutomationProperties.Name="Add these servers"/>
+          <CheckBox IsChecked="{Binding AddSudo}" Content="Use sudo" ToolTip="For a user that is not root" Margin="8,0,0,0"/>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- package -->
+    <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="0,0,0,14" Visibility="{Binding PackageOpen, Converter={StaticResource BoolToVis}}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,6">
+          <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Close" Command="{Binding CloseCommand}" Margin="0"/>
+          <TextBlock Style="{StaticResource H2}" Text="scriptix package" VerticalAlignment="Center"/>
+        </DockPanel>
+        <TextBlock Style="{StaticResource Label}" Text="FILES" Margin="0,0,0,5"/>
+        <Button Content="Save the files…" Command="{Binding SavePackagesCommand}" HorizontalAlignment="Left" ToolTip="Saves .deb, .rpm and AIX files with the scriptix command and the scripts from the Script page"/>
+        <StackPanel Visibility="{Binding HasServers, Converter={StaticResource BoolToVis}}">
+        <TextBlock Style="{StaticResource Label}" Text="TICKED SERVERS"/>
+        <StackPanel Orientation="Horizontal">
+          <Button Style="{StaticResource Primary}" Content="Install or update" Command="{Binding InstallCommand}"
+                  ToolTip="Puts a permanent scriptix command and the scripts from the Script page on the servers (.deb, .rpm or AIX fileset)"/>
+          <CheckBox IsChecked="{Binding Daily}" Content="with a scan every day at" VerticalAlignment="Center" Margin="4,0,8,0"/>
+          <TextBox Text="{Binding Time, UpdateSourceTrigger=PropertyChanged}" Width="64" Margin="0,0,8,0" AutomationProperties.Name="Time of the daily scan" ToolTip="Server time, for example 02:30"/>
+        </StackPanel>
+        <TextBlock Style="{StaticResource Label}" Text="ALREADY INSTALLED"/>
+        <StackPanel Orientation="Horizontal">
+          <Button Content="Scan now" Command="{Binding ScanInstalledCommand}" ToolTip="Runs the installed check scripts and brings the results back"/>
+          <Button Content="Get last results" Command="{Binding CollectCommand}" ToolTip="Brings back the results of the last scan, without scanning again"/>
+          <Button Content="Set daily scan" Command="{Binding ScheduleCommand}" ToolTip="Every day at the time above"/>
+          <Button Content="Stop daily scan" Command="{Binding ScheduleOffCommand}"/>
+          <Button Style="{StaticResource Danger}" Content="Remove package" Command="{Binding UninstallCommand}" Margin="0"/>
+        </StackPanel>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- empty state -->
+    <Border Grid.Row="2" Style="{StaticResource CardBorder}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="480">
+        <TextBlock Text="No servers yet" Style="{StaticResource H1}" HorizontalAlignment="Center"/>
+        <Button Style="{StaticResource Primary}" Content="Add servers…" Command="{Binding AddOpenCommand}" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+      </StackPanel>
+    </Border>
+
+    <!-- list -->
+    <Grid Grid.Row="2" Visibility="{Binding HasServers, Converter={StaticResource BoolToVis}}">
+      <DockPanel Visibility="{Binding MatrixOpen, Converter={StaticResource NotBoolToVis}}">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+          <ComboBox DockPanel.Dock="Left" Width="160" ItemsSource="{Binding Groups}" SelectedItem="{Binding Group}" AutomationProperties.Name="Group shown" Margin="0,0,10,0"/>
+          <Button DockPanel.Dock="Left" Content="Tick all" Command="{Binding TickAllCommand}" ToolTip="Ticks every server shown, or unticks them when all are ticked"/>
+          <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Take off the list" Command="{Binding RemoveCommand}" Margin="0" ToolTip="Takes the ticked servers off this list. Nothing is changed on them."/>
+          <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Stop waiting" Command="{Binding StopWaitingCommand}" ToolTip="When you closed the ssh window before it finished"
+                  Visibility="{Binding IsWaiting, Converter={StaticResource BoolToVis}}"/>
+          <TextBlock/>
+        </DockPanel>
+        <DataGrid ItemsSource="{Binding VisibleServers}" SelectedItem="{Binding Current}" AutomationProperties.Name="Servers" IsReadOnly="True">
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Width="40">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><CheckBox IsChecked="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" AutomationProperties.Name="{Binding Host}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="SERVER" Width="*" MinWidth="120" SortMemberPath="Host">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Host}" Style="{StaticResource CellMono}" ToolTip="{Binding Host}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="GROUP" Width="100" SortMemberPath="Group">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding Group, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Group"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="USER" Width="80" SortMemberPath="User">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding User, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="User"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="PORT" Width="60" SortMemberPath="Port">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding Port, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Port"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="SUDO" Width="62" SortMemberPath="Sudo">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><CheckBox IsChecked="{Binding Sudo, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" AutomationProperties.Name="Use sudo"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="KEY FILE" Width="84" SortMemberPath="KeyFile">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding KeyFile, UpdateSourceTrigger=LostFocus}" ToolTip="{Binding KeyFile}" AutomationProperties.Name="Key file"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="LAST SCAN" Binding="{Binding LastScan}" Width="132"/>
+            <DataGridTextColumn Header="✓" Binding="{Binding PassedText}" SortMemberPath="Passed" Width="46" Foreground="{StaticResource Ok}"/>
+            <DataGridTextColumn Header="✕" Binding="{Binding FailedText}" SortMemberPath="Failed" Width="46" Foreground="{StaticResource Bad}"/>
+            <DataGridTextColumn Header="–" Binding="{Binding SkippedText}" SortMemberPath="Skipped" Width="46" Foreground="{StaticResource Muted}"/>
+            <DataGridTemplateColumn Width="120" SortMemberPath="State" Header="NOW">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding State}" Style="{StaticResource CellText}" Foreground="{StaticResource Muted}" ToolTip="{Binding State}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Width="92">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Button Style="{StaticResource Ghost}" Content="Results" Margin="0" Padding="6,3" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}"
+                          Command="{Binding DataContext.OpenResultsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </DockPanel>
+
+      <!-- side by side -->
+      <DockPanel Visibility="{Binding MatrixOpen, Converter={StaticResource BoolToVis}}">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+          <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Close" Command="{Binding CloseCommand}" Margin="0" AutomationProperties.Name="Close side by side"/>
+          <Button DockPanel.Dock="Right" Content="Save as CSV…" Command="{Binding MatrixSaveCommand}"/>
+          <ComboBox DockPanel.Dock="Left" Width="130" ItemsSource="{Binding MatrixFilters}" SelectedItem="{Binding MatrixFilter}" AutomationProperties.Name="Rules shown" Margin="0,0,12,0"/>
+          <TextBlock Text="{Binding MatrixText}" Style="{StaticResource Sub}" VerticalAlignment="Center"/>
+        </DockPanel>
+        <DataGrid ItemsSource="{Binding MatrixRows}" IsReadOnly="True" FrozenColumnCount="2" EnableColumnVirtualization="True"
+                  b:MatrixColumns.Servers="{Binding MatrixServers}" AutomationProperties.Name="Servers side by side">
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="ID" Width="150" SortMemberPath="Id">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Id}" Style="{StaticResource CellMono}" ToolTip="{Binding Id}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="WHAT IT CHECKS" Width="320" SortMemberPath="Title">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Title}" Style="{StaticResource CellText}" ToolTip="{Binding Title}"/></DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </DockPanel>
+    </Grid>
+  </Grid>
+</UserControl>

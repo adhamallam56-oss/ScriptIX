@@ -1,0 +1,8 @@
+id,title,os,severity,check,compare,expected,fix,undo,notes
+EX-SSH-03,SSH: no empty passwords,Both,high,"grep -i '^[[:space:]]*PermitEmptyPasswords' /etc/ssh/sshd_config",Regex,[Nn][Oo]$,setcfg /etc/ssh/sshd_config PermitEmptyPasswords no,,Accounts without a password can't log in over SSH.
+EX-SSH-04,SSH: idle sessions end after 15 minutes,Both,medium,"grep -i '^[[:space:]]*ClientAliveInterval' /etc/ssh/sshd_config",Regex,ClientAliveInterval[[:space:]]+([1-9]|[1-8][0-9]|900)$,setcfg /etc/ssh/sshd_config ClientAliveInterval 900,,
+EX-LNX-07,Source routed packets ignored,Linux,medium,sysctl -n net.ipv4.conf.all.accept_source_route,Equals,0,sysctl_set net.ipv4.conf.all.accept_source_route 0,,
+EX-LNX-08,Login banner file present,Linux,low,test -s /etc/issue.net,ExitCode,0,line_add /etc/issue.net 'Authorised use only.',,Shown before SSH login when sshd uses it as Banner.
+EX-LNX-09,Telnet service off,Linux,medium,systemctl is-enabled telnet.socket 2>/dev/null,NotContains,enabled,svc_disable telnet.socket,,Telnet sends passwords in clear text.
+EX-AIX-04,AIX: password history of 5,AIX,medium,lssec -f /etc/security/user -s default -a histsize,Regex,histsize=([5-9]|[1-9][0-9])$,aix_chsec /etc/security/user default histsize 5,,
+EX-REV-01,Needs review example,Linux,medium,true,Equals,,useradd <user>,,The fix has a placeholder: fill in a real user name.
