@@ -238,3 +238,7 @@ src/ScriptIX.App    WPF views (MVVM, no logic in code-behind)
 src/ScriptIX.Cli    scriptix-cli.exe
 samples/            sample_rules.csv, sample_commands.txt
 ```
+
+## License
+
+All rights reserved. You may read the code, but not use, copy, change or sell it without permission. See `LICENSE`.
