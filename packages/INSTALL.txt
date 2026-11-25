@@ -1,11 +1,11 @@
-ScriptIX 2.6.0 packages: the scriptix command, with the basic checks inside.
+ScriptIX 2.6.1 packages: the scriptix command, with the basic checks inside.
 Run as root. Nothing runs by itself after installing.
 
-Debian, Ubuntu:                  dpkg -i scriptix_2.6.0-20261124.230156_all.deb
-RHEL, Rocky, Alma, Oracle, SUSE: rpm -Uvh scriptix-2.6.0-20261124.230156.noarch.rpm
-AIX 7.1 or newer, rpm:           rpm -Uvh scriptix-2.6.0-20261124.230156.aix6.1.noarch.rpm
-AIX 7.1 or newer, installp:      sh scriptix-2.6.2519.1381-aix.sh --install
-AIX .bff file (smit, NIM):       sh scriptix-2.6.2519.1381-aix.sh
+Debian, Ubuntu:                  dpkg -i scriptix_2.6.1-20261125.070524_all.deb
+RHEL, Rocky, Alma, Oracle, SUSE: rpm -Uvh scriptix-2.6.1-20261125.070524.noarch.rpm
+AIX 7.1 or newer, rpm:           rpm -Uvh scriptix-2.6.1-20261125.070524.aix6.1.noarch.rpm
+AIX 7.1 or newer, installp:      sh scriptix-2.6.2520.425-aix.sh --install
+AIX .bff file (smit, NIM):       sh scriptix-2.6.2520.425-aix.sh
 
 On AIX use the rpm or the installp one, not both.
 The .bff can only be made on AIX, so the -aix.sh file makes it there.

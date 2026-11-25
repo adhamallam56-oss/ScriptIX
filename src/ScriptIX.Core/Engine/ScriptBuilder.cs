@@ -180,7 +180,7 @@ public static class ScriptBuilder
 
     static string ModeText(CompareMode m) => m == CompareMode.ExitCode ? "rc" : m.ToString().ToLowerInvariant();
 
-    static string Resource(string name)
+    internal static string Resource(string name)
     {
         using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)
                       ?? throw new InvalidOperationException($"The {name} resource is missing from ScriptIX.Core.");

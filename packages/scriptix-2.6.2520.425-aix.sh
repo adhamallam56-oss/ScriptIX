@@ -1,12 +1,12 @@
 #!/bin/sh
-# ScriptIX 2.6.0-20261124.230156 package for AIX 7.1 or newer, fileset scriptix.rte 2.6.2519.1381.
+# ScriptIX 2.6.1-20261125.070524 package for AIX 7.1 or newer, fileset scriptix.rte 2.6.2520.425.
 # AIX's own backup command turns the files in here into a real .bff for installp, smit or NIM.
 #
-#   sh THIS_FILE              make scriptix.rte.2.6.2519.1381.bff in this folder
+#   sh THIS_FILE              make scriptix.rte.2.6.2520.425.bff in this folder
 #   sh THIS_FILE --install    make it and install it with installp
 #   sh THIS_FILE --uninstall  remove the fileset (the results in /var/lib/scriptix stay)
 #
-# Or install the .bff later: installp -acgXd scriptix.rte.2.6.2519.1381.bff scriptix.rte
+# Or install the .bff later: installp -acgXd scriptix.rte.2.6.2520.425.bff scriptix.rte
 
 PATH=/usr/bin:/usr/sbin:/etc:/usr/ccs/bin:/bin:/sbin; export PATH
 LC_ALL=C; LANG=C; export LC_ALL LANG
@@ -51,7 +51,7 @@ mkdir -p './usr/share/scriptix/lib' || fail "mkdir /usr/share/scriptix/lib"
 mkdir -p './usr/share/scriptix/scripts' || fail "mkdir /usr/share/scriptix/scripts"
 cat > './usr/bin/scriptix' <<'SCRIPTIX_END_OF_FILE' || fail "cannot write ./usr/bin/scriptix"
 #!/bin/sh
-# scriptix 2.6.0-20261124.230156 - runs the ScriptIX scripts installed on this server.
+# scriptix 2.6.1-20261125.070524 - runs the ScriptIX scripts installed on this server.
 # Strict POSIX sh: AIX 7.1+ ksh88, dash, bash, ksh93, mksh, busybox ash.
 
 # ---- safe environment --------------------------------------------------------
@@ -67,7 +67,7 @@ UMASK0=$(umask)
 umask 077
 ORIG=$(pwd 2>/dev/null) || ORIG=/
 
-VERSION='2.6.0-20261124.230156'
+VERSION='2.6.1-20261125.070524'
 LIB=/usr/share/scriptix/scripts
 SCAPLIB=/usr/share/scriptix/lib
 STATE=/var/lib/scriptix
@@ -4175,12 +4175,12 @@ SCRIPTIX_END_OF_FILE
 chmod 644 './usr/share/scriptix/lib/runtime.sh' || fail "chmod ./usr/share/scriptix/lib/runtime.sh"
 cat > './usr/share/scriptix/lib/scap.pl' <<'SCRIPTIX_END_OF_FILE' || fail "cannot write ./usr/share/scriptix/lib/scap.pl"
 #!/usr/bin/perl
-# scriptix 2.6.0-20261124.230156 - reads SCAP files (data streams, XCCDF, OVAL) for the scriptix command.
+# scriptix 2.6.1-20261125.070524 - reads SCAP files (data streams, XCCDF, OVAL) for the scriptix command.
 # Plain Perl 5.8 or newer, no modules: AIX and most Linux systems have it already.
 # It makes the same scripts as the ScriptIX app. The checks themselves run in sh and awk.
 use strict;
 
-my $VERSION = '2.6.0';
+my $VERSION = '2.6.1';
 my $NS12 = 'http://checklists.nist.gov/xccdf/1.2';
 my $OVALSYS = 'http://oval.mitre.org/XMLSchema/oval-definitions-5';
 my $MAX = 400 * 1024 * 1024;
@@ -5720,7 +5720,7 @@ chmod 644 './usr/share/scriptix/lib/scap.pl' || fail "chmod ./usr/share/scriptix
 chmod 700 './usr/share/scriptix/scripts'
 cat > './usr/share/scriptix/scripts/scriptix_basic.sh' <<'SCRIPTIX_END_OF_FILE' || fail "cannot write ./usr/share/scriptix/scripts/scriptix_basic.sh"
 #!/bin/sh
-# ScriptIX 2.6.0 - check script for Linux and AIX (POSIX sh)
+# ScriptIX 2.6.1 - check script for Linux and AIX (POSIX sh)
 # Commands: 36   Flagged risky: 0   Input hash: 10d7c4b3fe13b817
 # Help: sh THIS_FILE --help    Preview: --dry-run    Integrity: --verify
 # Do not edit anything below the BODY marker, or --verify will report a change.
@@ -5728,7 +5728,7 @@ cat > './usr/share/scriptix/scripts/scriptix_basic.sh' <<'SCRIPTIX_END_OF_FILE' 
 if [ -z "${SX_REEXEC:-}" ] && [ -x /usr/xpg4/bin/sh ] && [ "`uname -s`" = SunOS ]; then
   SX_REEXEC=1; export SX_REEXEC; exec /usr/xpg4/bin/sh "$0" "$@"
 fi
-SX_SHA256='d9db575978e59ddb11dd19eb5b1f60c1ebf6a86a327467764b60699d5bea09cf'
+SX_SHA256='b0926384646abab43a6bdb79ce89a2933f962ae48c875f8d5eab35aeac5d53d1'
 #__SCRIPTIX_BODY__
 # ============================================================================
 # ScriptIX runtime. Strict POSIX sh: dash, bash, ksh93, AIX ksh88, busybox ash.
@@ -5756,7 +5756,7 @@ SX_SELF=$0   # $0 inside functions is not reliable on old ksh88
 
 # ---- settings baked in by the app ------------------------------------------
 SX_KIND='check'
-SX_VERSION='2.6.0'
+SX_VERSION='2.6.1'
 SX_TOTAL=36
 SX_RISKY=0
 SX_SCHEMA=3
@@ -6885,7 +6885,7 @@ SCRIPTIX_END_OF_FILE
 chmod 700 './usr/share/scriptix/scripts/scriptix_basic.sh' || fail "chmod ./usr/share/scriptix/scripts/scriptix_basic.sh"
 cat > 'lpp_name' <<'SCRIPTIX_END_OF_FILE' || fail "cannot write lpp_name"
 4 R I scriptix {
-scriptix.rte 2.6.2519.1381 01 N U en_US ScriptIX checks and hardening
+scriptix.rte 2.6.2520.425 01 N U en_US ScriptIX checks and hardening
 [
 *prereq bos.rte 7.1.0.0
 %
@@ -7032,22 +7032,22 @@ chmod 644 usr/lpp/scriptix/liblpp.a
 chown -R 0:0 . || fail "chown failed"
 
 # ---- the .bff: lpp_name must come first, then only our own files and folders -----
-BFF="$T/scriptix.rte.2.6.2519.1381.bff"
+BFF="$T/scriptix.rte.2.6.2520.425.bff"
 { printf './lpp_name\n./usr/lpp/scriptix/liblpp.a\n'
   cat "$T/list"; } | backup -iqf "$BFF" || fail "backup failed"
 [ -s "$BFF" ] || fail "backup made no file"
 restore -Tqf "$BFF" 2>/dev/null | grep 'usr/bin/scriptix$' >/dev/null || fail "the .bff cannot be read back"
 
 if [ "$MODE" = build ]; then
-  cp "$BFF" "$START/scriptix.rte.2.6.2519.1381.bff" || fail "cannot write $START/scriptix.rte.2.6.2519.1381.bff"
-  chmod 600 "$START/scriptix.rte.2.6.2519.1381.bff"
-  printf 'Made %s\n' "$START/scriptix.rte.2.6.2519.1381.bff"
-  printf 'Install it with: installp -acgXd %s scriptix.rte\n' "$START/scriptix.rte.2.6.2519.1381.bff"
+  cp "$BFF" "$START/scriptix.rte.2.6.2520.425.bff" || fail "cannot write $START/scriptix.rte.2.6.2520.425.bff"
+  chmod 600 "$START/scriptix.rte.2.6.2520.425.bff"
+  printf 'Made %s\n' "$START/scriptix.rte.2.6.2520.425.bff"
+  printf 'Install it with: installp -acgXd %s scriptix.rte\n' "$START/scriptix.rte.2.6.2520.425.bff"
   exit 0
 fi
 installp -acgXd "$BFF" scriptix.rte; r=$?
-if lslpp -Lqc scriptix.rte 2>/dev/null | grep '2.6.2519.1381' >/dev/null && [ -x /usr/bin/scriptix ]; then
-  printf 'Installed scriptix.rte 2.6.2519.1381\n'
+if lslpp -Lqc scriptix.rte 2>/dev/null | grep '2.6.2520.425' >/dev/null && [ -x /usr/bin/scriptix ]; then
+  printf 'Installed scriptix.rte 2.6.2520.425\n'
   exit 0
 fi
 [ "$r" = 0 ] && r=1

@@ -12,6 +12,9 @@ ScriptIX has two parts. Use either one, or both:
 
 Both make the same check scripts. A check only reads. A fix asks first, backs up every file its helpers change, and logs
 every command with its output and exit code.
+
+**New here?** Read the [step-by-step guide](docs/GUIDE.md), with pictures. It is in the app too: *Help > Step-by-step guide*.
+
 ## Build and start
 
 | File        | What it does |
@@ -287,6 +290,7 @@ Commands that read SCAP content also take `--tailoring FILE`, `--set NAME=VALUE`
 src/ScriptIX.Core   engine, importers, reports, view-models (no WPF), runtime.sh, oval.awk and the packages' scripts, scap.pl included (embedded)
 src/ScriptIX.App    WPF views (MVVM, no logic in code-behind)
 src/ScriptIX.Cli    scriptix-cli.exe
+docs/               the step-by-step guide (GUIDE.md; make-guide.ps1 makes the guide.html that is in the app)
 samples/            sample_rules.csv, sample_commands.txt
 ```
 

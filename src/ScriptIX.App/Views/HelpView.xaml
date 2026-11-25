@@ -48,6 +48,7 @@
 
     <DockPanel Grid.Row="1">
       <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Left">
+        <Button Content="Step-by-step guide" HorizontalAlignment="Left" Margin="0,0,0,8" Command="{Binding OpenGuideCommand}" ToolTip="Every way to use ScriptIX, with pictures. Opens in your browser."/>
         <Button Style="{StaticResource Ghost}" Content="Replay intro" HorizontalAlignment="Left" Command="{Binding Tutorial.StartCommand}"/>
         <Button Style="{StaticResource Ghost}" Content="Open log folder" HorizontalAlignment="Left" Command="{Binding OpenLogFolderCommand}"/>
       </StackPanel>

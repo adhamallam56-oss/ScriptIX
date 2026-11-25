@@ -131,7 +131,7 @@
                 <DataTemplate><TextBlock Text="{Binding Host}" Style="{StaticResource CellMono}" ToolTip="{Binding Host}"/></DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="GROUP" Width="100" SortMemberPath="Group">
+            <DataGridTemplateColumn Header="GROUP" Width="84" SortMemberPath="Group">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding Group, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Group"/></DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
@@ -156,7 +156,7 @@
                 <DataTemplate><TextBox Style="{StaticResource EditBox}" Text="{Binding KeyFile, UpdateSourceTrigger=LostFocus}" ToolTip="{Binding KeyFile}" AutomationProperties.Name="Key file"/></DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTextColumn Header="LAST SCAN" Binding="{Binding LastScan}" Width="132"/>
+            <DataGridTextColumn Header="LAST SCAN" Binding="{Binding LastScan}" Width="144"/>
             <DataGridTextColumn Header="✓" Binding="{Binding PassedText}" SortMemberPath="Passed" Width="46" Foreground="{StaticResource Ok}"/>
             <DataGridTextColumn Header="✕" Binding="{Binding FailedText}" SortMemberPath="Failed" Width="46" Foreground="{StaticResource Bad}"/>
             <DataGridTextColumn Header="–" Binding="{Binding SkippedText}" SortMemberPath="Skipped" Width="46" Foreground="{StaticResource Muted}"/>

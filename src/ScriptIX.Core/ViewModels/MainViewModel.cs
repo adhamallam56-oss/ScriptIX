@@ -25,6 +25,7 @@ public sealed class MainViewModel : ViewModelBase
     public RelayCommand GoToCommand { get; }
     public RelayCommand EscapeCommand { get; }
     public RelayCommand OpenLogFolderCommand { get; }
+    public RelayCommand OpenGuideCommand { get; }
 
     public string Title => $"{AppInfo.Name} {AppInfo.Version} · {AppInfo.Tagline}";
     public string Version => $"v{AppInfo.Version}";
@@ -54,6 +55,12 @@ public sealed class MainViewModel : ViewModelBase
             else if (Rules.ScapTools.IsOpen) Rules.ScapTools.CloseCommand.Execute(null);
             else if (SelectedTab == TabServers) Servers.CloseCommand.Execute(null);
         });
+        OpenGuideCommand = new RelayCommand(() => Safe("opening the guide", () =>
+        {
+            var path = Path.Combine(Path.GetTempPath(), "ScriptIX", "guide.html");
+            S.Files.WriteAllText(path, ScriptBuilder.Resource("ScriptIX.guide.html"));
+            S.Shell.OpenFile(path);
+        }));
         OpenLogFolderCommand = new RelayCommand(() => Safe("opening the log folder", () =>
             S.Shell.OpenFolder(Path.GetDirectoryName(S.Crash.Location)!)));
 

@@ -8,13 +8,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <PathMap>$(MSBuildProjectDirectory)=/ScriptIX</PathMap>
-    <Version>2.6.0</Version>
+    <Version>2.6.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Engine\runtime.sh" LogicalName="ScriptIX.runtime.sh" />
     <EmbeddedResource Include="Engine\oval.awk" LogicalName="ScriptIX.oval.awk" />
     <EmbeddedResource Include="Packaging\scriptix.sh" LogicalName="ScriptIX.scriptix.sh" />
     <EmbeddedResource Include="Packaging\scap.pl" LogicalName="ScriptIX.scap.pl" />
+    <EmbeddedResource Include="..\..\docs\guide.html" LogicalName="ScriptIX.guide.html" />
     <EmbeddedResource Include="Packaging\aix.sh" LogicalName="ScriptIX.aix.sh" />
   </ItemGroup>
   <ItemGroup>

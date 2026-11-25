@@ -7,7 +7,7 @@
     <RootNamespace>ScriptIX.Cli</RootNamespace>
     <AssemblyName>scriptix-cli</AssemblyName>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>2.6.0</Version>
+    <Version>2.6.1</Version>
     <PathMap>$(MSBuildProjectDirectory)=/ScriptIX</PathMap>
   </PropertyGroup>
   <ItemGroup>
