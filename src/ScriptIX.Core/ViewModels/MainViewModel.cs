@@ -37,6 +37,8 @@ public sealed class MainViewModel : ViewModelBase
         Manual = new ManualViewModel(services);
         Script = new ScriptViewModel(services);
         Servers = new ServersViewModel(services, Script.Scripts, Script.SavePackagesCommand);
+        Script.OpenScapPath = () => Rules.ScapPath;
+        Servers.AskContent = Script.AskContent;
         Results = new ResultsViewModel(services);
         Tutorial = new TutorialViewModel(services.Files, t => SelectedTab = t);
 

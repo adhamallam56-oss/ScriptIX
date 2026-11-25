@@ -270,18 +270,20 @@ public sealed class ServersViewModel : ViewModelBase
     public bool Daily { get => daily; set => Set(ref daily, value); }
     public string Time { get => time; set => Set(ref time, value ?? ""); }
 
+    /// <summary>Asks for the SCAP files that go into the package. null = cancelled.</summary>
+    public Func<List<(string Name, byte[] Data)>?>? AskContent { get; set; }
+
     void Install()
     {
         var at = daily ? Time.Trim() : "";
-        if (daily)
-        {
-            Packages.CheckTime(at);
-            if (!Scripts.Any(ScriptViewModel.IsCheck)) throw new FormatException("A daily scan needs a check script. Make one on the Rules page with Check only.");
-        }
-        var inside = Scripts.Count == 0 ? "The package has no scripts yet, only the scriptix command. Make a script first to put it in."
-                                        : "Scripts inside: " + string.Join(", ", Scripts.Select(x => x.FileName)) + ". Installing runs none of them.";
+        if (daily) Packages.CheckTime(at);
+        var names = Scripts.Select(x => x.FileName).ToList();
+        if (!Scripts.Any(ScriptViewModel.IsCheck)) names.Add("the basic checks");
+        var inside = "Scripts inside: " + string.Join(", ", names) + ". Installing runs none of them.";
         if (!S.Dialogs.Confirm($"Install the scriptix package on:\n\n{Names(Ticked())}\n\n{inside}")) return;
-        Start(SshRun.Install(), SshRun.BundleName, new Packages(Scripts.ToList(), DateTime.UtcNow).Bundle(at), "Installing");
+        var content = AskContent == null ? new() : AskContent();
+        if (content == null) return;
+        Start(SshRun.Install(), SshRun.BundleName, new Packages(Scripts.ToList(), DateTime.UtcNow, content).Bundle(at), "Installing");
     }
 
     void Start(SshJob job, string payloadName, byte[]? payload, string doing)

@@ -297,15 +297,32 @@ void CopyPasteBlock()
     });
 
     // .deb, .rpm and the AIX installer, with every script on this page inside
+    /// <summary>The SCAP file that is open on the Rules page, or "".</summary>
+    public Func<string>? OpenScapPath { get; set; }
+
+    /// <summary>Asks whether the open SCAP file goes into the packages. null = cancelled.</summary>
+    public List<(string Name, byte[] Data)>? AskContent()
+    {
+        var path = OpenScapPath?.Invoke() ?? "";
+        if (path.Length == 0 || !S.Files.Exists(path)) return new();
+        return S.Dialogs.AskYesNoCancel($"Put {Path.GetFileName(path)} in the package too?\n\nThe server can then scan with it: scriptix eval --profile NAME") switch
+        {
+            Choice.Yes => Packages.ContentFiles(path, S.Files.OpenRead, S.Files.Exists),
+            Choice.No => new(),
+            _ => null
+        };
+    }
+
     void SavePackages() => Safe("making the packages", () =>
     {
         var dir = S.Dialogs.PickFolder("Pick a folder for the packages");
         if (dir == null) return;
-        var made = new Packages(Scripts.ToList(), DateTime.UtcNow).Build(Packages.Kinds);
+        if (AskContent() is not { } content) return;
+        var made = new Packages(Scripts.ToList(), DateTime.UtcNow, content).Build(Packages.Kinds);
         var sums = Path.Combine(dir, "SHA256SUMS");
         if (S.Files.Exists(sums) && !S.Dialogs.Confirm("There is a SHA256SUMS file in this folder already. Replace it?")) return;
         foreach (var (name, data) in made) S.Files.WriteAllBytes(Path.Combine(dir, name), data);
-        Status(Scripts.Count > 0 ? $"Packages saved to {dir}" : $"Packages saved to {dir}. They have no scripts inside yet, only the scriptix command.");
+        Status(Scripts.Any(IsCheck) ? $"Packages saved to {dir}" : $"Packages saved to {dir}. The basic checks are inside.");
         S.Shell.OpenFolder(dir);
     });
 

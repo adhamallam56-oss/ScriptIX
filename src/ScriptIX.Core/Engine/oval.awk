@@ -1081,12 +1081,14 @@ function collectset(o,   n, i, j, it, f, k, any, fl, id) {
 }
 
 # ---------------------------------------------------------------- files
+function iswsl(  l) { if (WSL == "") { WSL = 0; if ((getline l < "/proc/version") > 0 && tolower(l) ~ /microsoft/) WSL = 1; close("/proc/version") } return WSL }
 function fsprune(st, how,   s, n, i, t) {
   if (how == "defined") return "-xdev "
   if (st ~ /^\/(proc|sys)(\/|$)/) return ""
   if (SYS != "Linux") return (how == "local" && (SYS == "AIX" || SYS == "SunOS")) ? "-fstype nfs -prune -o " : ""
   s = "proc sysfs"
   if (how != "all") s = s " nfs nfs4 cifs smb3 smbfs 9p drvfs afs ncpfs autofs fuse.sshfs ceph glusterfs fuse.glusterfs"
+  else if (iswsl()) s = s " 9p drvfs"   # the drives of the Windows PC are not part of this system
   n = split(s, FST, " "); t = ""
   for (i = 1; i <= n; i++) t = t (i > 1 ? " -o " : "") "-fstype " FST[i]
   return "\\( " t " \\) -prune -o "
@@ -1451,13 +1453,14 @@ function p_sysctl(o,   f, l, i, n, it, nm, v, c) {
 function units(   f, l) {
   if (UNITSOK) return
   UNITSOK = 1; UN = 0
-  f = cached("{ systemctl list-unit-files --no-legend --no-pager; systemctl list-units --all --no-legend --no-pager --plain; } | awk '{ u = $1; if (u !~ /[A-Za-z0-9]/) u = $2; if (!(u in s)) { s[u] = 1; print u } }'")
-  while ((getline l < f) > 0) { UN++; UNIT[UN] = l }
+  f = cached("{ systemctl list-unit-files --no-legend --no-pager; systemctl list-units --all --no-legend --no-pager --plain || echo SX-NO-SYSTEMD; } | awk '{ u = $1; if (u !~ /[A-Za-z0-9]/) u = $2; if (!(u in s)) { s[u] = 1; print u } }'")
+  while ((getline l < f) > 0) { if (l == "SX-NO-SYSTEMD") UNBAD = 1; else { UN++; UNIT[UN] = l } }
   close(f)
 }
 function p_unitprop(o,   i, f, l, it, nm, v, k, m, j) {
   if (!has("systemctl")) return "na"
   units()
+  if (UNBAD) { note("systemd is not running, or cannot be asked"); return "error" }
   if (UN == 0) { note("systemctl gave no units"); return "error" }
   for (i = 1; i <= UN; i++) {
     if (!objmatch(o, "unit", UNIT[i])) continue
@@ -1480,6 +1483,7 @@ function p_unitprop(o,   i, f, l, it, nm, v, k, m, j) {
 function p_unitdep(o,   i, f, l, it, d) {
   if (!has("systemctl")) return "na"
   units()
+  if (UNBAD) { note("systemd is not running, or cannot be asked"); return "error" }
   if (UN == 0) { note("systemctl gave no units"); return "error" }
   for (i = 1; i <= UN; i++) {
     if (!objmatch(o, "unit", UNIT[i])) continue

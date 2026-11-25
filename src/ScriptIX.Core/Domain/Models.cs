@@ -7,7 +7,7 @@ namespace ScriptIX;
 public static class AppInfo
 {
     public const string Name = "ScriptIX";
-    public const string Version = "2.4.1";
+    public const string Version = "2.6.0";
     public const string Tagline = "Hardening scripts for Linux & AIX";
 }
 

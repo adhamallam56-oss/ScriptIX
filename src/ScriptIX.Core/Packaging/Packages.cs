@@ -22,8 +22,10 @@ public sealed class Packages
     public const string Name = "scriptix";
     public const string Fileset = "scriptix.rte";
     const string Summary = "Check and harden this server with ScriptIX scripts";
-    const string Description = "The scriptix command scans this server with the check scripts made in ScriptIX, keeps the results,\n" +
-                               "shows what changed, and can scan on a schedule. It needs only sh and the system's own tools.";
+    const string Description = "The scriptix command scans this server with SCAP files (data streams, XCCDF, OVAL) or with the check\n" +
+                               "scripts made in ScriptIX, keeps the results, shows what changed, makes reports and fixes, and can\n" +
+                               "scan on a schedule. It scans other servers over ssh, where nothing has to be installed. It needs\n" +
+                               "only sh and the system's own tools, and perl to read SCAP files.";
 
     readonly DateTime built;
     readonly List<PackageFile> files = new();
@@ -34,9 +36,11 @@ public sealed class Packages
     /// <summary>AIX levels are four numbers of at most 2, 2, 4 and 4 digits: version, days since 2020, minute of the day.</summary>
     public string Vrmf { get; }
 
-    public Packages(IReadOnlyList<GeneratedScript> scripts, DateTime builtUtc) : this(scripts.Select(s => (s.FileName, s.Content)).ToList(), builtUtc) { }
+    public Packages(IReadOnlyList<GeneratedScript> scripts, DateTime builtUtc, IReadOnlyList<(string Name, byte[] Data)>? content = null)
+        : this(scripts.Select(s => (s.FileName, s.Content)).ToList(), builtUtc, content) { }
 
-    public Packages(IReadOnlyList<(string Name, string Content)> scripts, DateTime builtUtc)
+    /// <param name="content">SCAP files to put inside, from <see cref="ContentFiles"/></param>
+    public Packages(IReadOnlyList<(string Name, string Content)> scripts, DateTime builtUtc, IReadOnlyList<(string Name, byte[] Data)>? content = null)
     {
         built = DateTime.SpecifyKind(builtUtc, DateTimeKind.Utc);
         Version = AppInfo.Version;
@@ -48,15 +52,54 @@ public sealed class Packages
         files.Add(new("/usr/share/man/man8/scriptix.8", Lf(ManPage()), 0b110_100_100));
         files.Add(new("/usr/share/scriptix/", Array.Empty<byte>(), 0b111_101_101));
         files.Add(new("/usr/share/scriptix/scripts/", Array.Empty<byte>(), 0b111_000_000));   // your own commands can be private
-        foreach (var (name, content) in scripts)
+        files.Add(new("/usr/share/scriptix/lib/", Array.Empty<byte>(), 0b111_101_101));
+        files.Add(new("/usr/share/scriptix/lib/scap.pl", Utf8(Read("ScriptIX.scap.pl").Replace("{{PKGVERSION}}", $"{Version}-{Release}").Replace("{{VERSION}}", Version)), 0b110_100_100));
+        files.Add(new("/usr/share/scriptix/lib/runtime.sh", Utf8(Read("ScriptIX.runtime.sh")), 0b110_100_100));
+        files.Add(new("/usr/share/scriptix/lib/oval.awk", Utf8(Read("ScriptIX.oval.awk")), 0b110_100_100));
+        files.Add(new("/usr/share/scriptix/content/", Array.Empty<byte>(), 0b111_101_101));
+        foreach (var (name, data) in content ?? Array.Empty<(string, byte[])>())
+            files.Add(new("/usr/share/scriptix/content/" + name, data, 0b110_100_100));
+        foreach (var (name, text) in scripts)
         {
             if (!Regex.IsMatch(name, @"^[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.sh$")) throw new FormatException($"\"{name}\" can't be used as a file name in a package.");
-            if (!content.Contains("\n#__SCRIPTIX_BODY__\n")) throw new FormatException($"{name} isn't a ScriptIX script.");
+            if (!text.Contains("\n#__SCRIPTIX_BODY__\n")) throw new FormatException($"{name} isn't a ScriptIX script.");
             if (files.Any(f => f.Path.EndsWith("/" + name, StringComparison.Ordinal))) throw new FormatException($"{name} is there twice.");
-            files.Add(new("/usr/share/scriptix/scripts/" + name, Utf8(content), 0b111_000_000));
+            files.Add(new("/usr/share/scriptix/scripts/" + name, Utf8(text), 0b111_000_000));
         }
+        // something to scan with right after installing
+        if (!scripts.Any(s => IsCheck(s.Content)) && scripts.All(s => s.Name != StarterChecks.FileName))
+            files.Add(new("/usr/share/scriptix/scripts/" + StarterChecks.FileName, Utf8(StarterChecks.Script().Content), 0b111_000_000));
         files.Sort((a, b) => string.CompareOrdinal(a.Clean, b.Clean));
     }
+
+    /// <summary>A SCAP file and the files next to it that it refers to (its OVAL, OCIL and CPE files).</summary>
+    public static List<(string Name, byte[] Data)> ContentFiles(string path, Func<string, Stream> open, Func<string, bool> exists)
+    {
+        var l = new List<(string Name, byte[] Data)>();
+        var dir = Path.GetDirectoryName(path) ?? "";
+        void Add(string name)
+        {
+            if (l.Any(x => x.Name == name)) return;
+            if (!Regex.IsMatch(name, @"^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$")) throw new FormatException($"\"{name}\" can't be used as a file name in a package. Use letters, digits, dots and dashes.");
+            using var ms = new MemoryStream();
+            using (var s = open(Path.Combine(dir, name))) s.CopyTo(ms);
+            var d = ms.ToArray();
+            if (d.Length > 2 && d[0] == 0xef && d[1] == 0xbb && d[2] == 0xbf) d = d[3..];
+            string text;
+            try { text = new UTF8Encoding(false, true).GetString(d); }
+            catch (DecoderFallbackException) { throw new FormatException($"{name} isn't a UTF-8 file, so it can't be put in a package."); }
+            if (text.Contains('\0')) throw new FormatException($"{name} isn't a UTF-8 file, so it can't be put in a package.");
+            l.Add((name, d));
+            foreach (Match m in Regex.Matches(text, "href\\s*=\\s*[\"']([^\"'#/\\\\:]+\\.xml)[\"']"))
+                foreach (var n in new[] { m.Groups[1].Value, m.Groups[1].Value.Replace("-oval.xml", "-cpe-dictionary.xml") })
+                    if (exists(Path.Combine(dir, n))) Add(n);
+        }
+        Add(Path.GetFileName(path));
+        return l;
+    }
+
+    // the first READONLY= line is the app's own
+    static bool IsCheck(string content) => Regex.Match(content, "^READONLY=(.*)$", RegexOptions.Multiline).Groups[1].Value.Trim() == "1";
 
     public string DebName => $"{Name}_{Version}-{Release}_all.deb";
     public string RpmName => $"{Name}-{Version}-{Release}.noarch.rpm";
@@ -83,11 +126,24 @@ public sealed class Packages
         .I command
         [options]
         .SH DESCRIPTION
-        Scans this server with the check scripts made in ScriptIX, keeps the results, and shows what changed.
+        Scans this server, or others over ssh, with SCAP files (data streams, XCCDF, OVAL) or with the check scripts made in
+        ScriptIX. Keeps the results, shows what changed, and makes reports and fixes.
+        Scanning needs sh and awk. Reading a SCAP file also needs perl.
         Run
         .B scriptix help
         for the list of commands.
+        .SH EXAMPLES
+        .nf
+        scriptix info FILE.xml
+        scriptix eval \-\-profile cis_level1_server \-\-report report.html FILE.xml
+        scriptix add FILE.xml \-\-profile cis_level1_server \-\-name cis
+        scriptix ssh root@web1
+        scriptix schedule daily 02:30
+        .fi
         .SH FILES
+        .TP
+        .I /usr/share/scriptix/content
+        SCAP files from the package, or put there by you
         .TP
         .I /usr/share/scriptix/scripts
         the scripts from the package
@@ -97,6 +153,9 @@ public sealed class Packages
         .TP
         .I /var/lib/scriptix/runs
         results, logs and backups. They stay when the package is removed.
+        .TP
+        .I /var/lib/scriptix/hosts
+        results of other servers (scriptix ssh)
 
         """.Replace("\r\n", "\n");
 

@@ -30,7 +30,7 @@ usage:
   scriptix-cli cvss VECTOR                                       CVSS 2.0 / 3.0 / 3.1 score
 
  Servers
-  scriptix-cli package [SCRIPT.sh...] [--type deb,rpm,aixrpm,aix] [--out DIR]   packages with the scriptix command and these scripts
+  scriptix-cli package [SCRIPT.sh...] [--content FILE.xml] [--type deb,rpm,aixrpm,aix] [--out DIR]   packages with the scriptix command, these scripts and SCAP files
   scriptix-cli matrix RESULTS... [--out F.csv]                   several servers' results side by side
   scriptix-cli version
 """);
@@ -234,8 +234,10 @@ try
         {
             var types = (Opt("--type") ?? string.Join(',', Packages.Kinds)).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             var dir = Opt("--out") ?? ".";
+            var content = new List<(string Name, byte[] Data)>();
+            while (Opt("--content") is { } scap) content.AddRange(Packages.ContentFiles(scap, File.OpenRead, File.Exists).Where(x => content.All(c => c.Name != x.Name)));
             if (a.FirstOrDefault(x => x.StartsWith('-')) is { } badOpt) return Usage("unknown option: " + badOpt);
-            var pk = new Packages(a.Select(f => (Path.GetFileName(f), File.ReadAllText(f))).ToList(), DateTime.UtcNow);
+            var pk = new Packages(a.Select(f => (Path.GetFileName(f), File.ReadAllText(f))).ToList(), DateTime.UtcNow, content);
             Directory.CreateDirectory(dir);
             foreach (var (n, data) in pk.Build(types))
             {

@@ -52,9 +52,23 @@ On first start a short intro walks through the pages (replay it any time from *H
 - **Package…** installs, updates or removes the `scriptix` package, sets a daily scan, scans with the installed
   scripts, or only fetches their last results.
 
+## Two ways to scan, you choose
+
+| | From Windows | On the server |
+|---|---|---|
+| What you need | the ScriptIX app, nothing on the server | the `scriptix` package, no Windows |
+| SCAP scan | *Rules* > *Check only*, then *Run over SSH* or copy the script | `scriptix eval --profile P FILE` |
+| Reports | *Results > Export* (PDF, Word, Excel, HTML, XCCDF, ARF, CSV, JSON...) | HTML, XCCDF, ARF, CSV |
+| Guide, fixes, tailoring, content check | *SCAP* menu | `scriptix guide`, `fix`, `tailor`, `validate` |
+| Other servers | *Servers* | `scriptix ssh` |
+| Every day | *Servers > Package…* | `scriptix schedule` |
+
+Both make the same check scripts, byte for byte, so the results are the same. PDF, Word, Excel and CVSS are only in the app.
+
 ## The scriptix package
 
-Ready-made packages with only the command are in `packages`. To put your scripts inside, *Script > Packages…* (or
+Ready-made packages are in `packages`. They have 36 basic checks inside (`basic`: accounts, files, sshd, network,
+kernel, AIX password rules; a small set of our own, not a benchmark). To put your scripts inside instead, *Script > Packages…* (or
 *Servers > Package… > Save the files…*, or `scriptix-cli package`) makes:
 
 | File | For | Install by hand |
@@ -67,8 +81,30 @@ Ready-made packages with only the command are in `packages`. To put your scripts
 The `-aix.sh` file holds everything and makes a real `scriptix.rte...bff` on AIX with AIX's own `backup` and `ar`
 (`sh FILE`, for installp, smit or NIM), or installs it at once (`--install`). It needs no download. Use the AIX `.rpm` or the fileset, not both.
 
-Packages made in the app have the scripts from the Script page inside. Each one puts a `scriptix` command on the server. It needs only
-`sh` and the system's own tools. Installing runs nothing; the packages are not signed (compare `SHA256SUMS`).
+Packages made in the app have the scripts from the Script page inside and, if you say yes, the SCAP file that is open
+(`scriptix-cli package --content FILE.xml`). Each one puts a `scriptix` command on the server. Scanning needs only `sh` and
+the system's own tools; reading a SCAP file also needs `perl` (AIX, Debian, Ubuntu and SUSE have it; on a minimal Red Hat:
+`dnf install perl-interpreter`). Installing runs nothing; the packages are not signed (compare `SHA256SUMS`).
+
+Scan with a SCAP file (data stream, XCCDF or OVAL), as with oscap:
+
+```sh
+scriptix content                                   # the SCAP files here (SCAP Security Guide, or from the package)
+scriptix info FILE.xml                             # what is inside, with the profiles
+scriptix eval --profile cis_level1_server FILE.xml --report r.html --results r.xml --results-arf arf.xml
+scriptix eval --profile cis_level1_server          # no file: the one made for this system
+scriptix eval --profile P --remediate FILE.xml     # fix what failed (asks first), scan again; no undo, have a backup
+scriptix report NAME                               # web page of the last run
+scriptix guide --profile P FILE.xml --out g.html
+scriptix fix --profile P --type ansible --results NAME FILE.xml   # bash, ansible, puppet...; script = a ScriptIX script of them
+scriptix tailor --profile P --unselect RULE --set NAME=VALUE --out t.xml FILE.xml
+scriptix eval --profile P --tailoring-file t.xml FILE.xml
+scriptix add FILE.xml --profile P --name cis       # keep it as a check script: scan, schedule, status, ssh
+scriptix ssh -c FILE.xml --profile P --out reports root@web1 root@aix1
+scriptix xccdf eval --profile P --report r.html FILE.xml          # oscap's names and exit codes (0, 2, 1)
+```
+
+The other commands:
 
 ```sh
 scriptix list                    # the scripts
@@ -78,15 +114,25 @@ scriptix results                 # what failed        (--all: every rule)
 scriptix diff                    # what changed since the scan before
 scriptix preview apply           # what the apply script would change
 scriptix apply apply             # run it (asks first);  scriptix undo  puts it back
+scriptix ssh root@web1 admin@db1:2222     # run the check scripts on other servers
+scriptix ssh --sudo -i KEY -f servers.txt # many servers, with a key and sudo
+scriptix ssh --apply apply root@web1      # run the apply script there (asks first)
+scriptix servers                 # last result of every server; results, diff and export take --host HOST
 scriptix schedule daily 02:30    # or: weekly sun 02:30, off   (cron.d, systemd timer or root's crontab)
 scriptix add FILE.sh             # one more ScriptIX script;  remove, verify, export, selftest, help
 ```
+
+`scriptix ssh` works like `oscap-ssh`, but the other server needs only `sh` and `sshd`, no ScriptIX and no oscap. The
+script is sent, its hash is checked there, it runs, the results come back, and it is removed again. `ssh` asks for
+passwords itself, once per server; they never pass through ScriptIX. New host keys are never accepted without asking.
 
 A script that was changed after it was made is never run. Results stay in `/var/lib/scriptix` when the package is removed.
 
 Tested: the `.deb` with dpkg and the `.rpm` with rpm 4.18 on Ubuntu 24.04, the command on dash, bash, ksh93, mksh, yash and
 posh, and the SSH jobs with Windows' ssh as root and with sudo. The AIX `.rpm` was installed with Linux' rpm and
 the AIX installer run with stand-in AIX commands only, **never on a real AIX**.
+`scriptix eval` gave the same result as oscap 1.3.9 for every rule of the Ubuntu 22.04 CIS Level 1 Server profile, and its check
+scripts were compared byte for byte with the app's for 44 profiles of the Ubuntu SCAP Security Guide.
 
 Drag and drop works anywhere in the window: rules, SCAP files, command lists and results are recognised automatically.
 
@@ -98,13 +144,13 @@ neither oscap nor bash.
 
 | OpenSCAP | ScriptIX |
 |---|---|
-| `oscap xccdf eval`, `oscap oval eval` | *Check only*, then run the script |
-| `oscap info` | *SCAP > Info* |
+| `oscap xccdf eval`, `oscap oval eval` | *Check only*, then run the script; on the server `scriptix eval` |
+| `oscap info` | *SCAP > Info*, `scriptix info` |
 | profiles, `--tailoring-file`, SCAP Workbench | *SCAP > Values*, the IN PROFILE column, *Load/Save tailoring* |
 | `--results`, `--results-arf`, scores | *Results > Export > XCCDF / ARF*, the SCORE tile (default, flat, flat-unweighted, absolute) |
 | `generate report` / `guide` / `fix` | *Export*, *SCAP > Security guide*, *SCAP > Export fixes* (Bash, Ansible, Puppet, Kubernetes, Ignition, blueprint, Kickstart, Bootc) |
-| `--remediate` | *Fix failed* (with backup, dry-run and undo) |
-| `oscap-ssh` | *Run over SSH* (you type the password in the console window; it is never seen or stored) |
+| `--remediate` | *Fix failed*, `scriptix eval --remediate`. Both ask first. Undo covers only ScriptIX's own helpers, not the shell fixes of a SCAP file |
+| `oscap-ssh` | *Run over SSH* on Windows, `scriptix ssh` on Linux and AIX (`ssh` asks for the password; it is never seen or stored) |
 | `oscap-diff` | *Results > Compare* |
 | SCE scripts, OCIL questions | run in the script / answered with *Your answer* on the Results page |
 | `oscap cvss` | *SCAP > CVSS score* |
@@ -215,7 +261,7 @@ scriptix-cli oscap FILE.xml [--profile ID] [--out DIR]
 scriptix-cli report RESULTS [--content FILE.xml] [--profile ID] [--xccdf F] [--arf F] [--html F] [--csv F] [--json F] [--md F] [--docx F] [--xlsx F]
 scriptix-cli compare NOW BEFORE
 scriptix-cli cvss VECTOR
-scriptix-cli package [SCRIPT.sh...] [--type deb,rpm,aixrpm,aix] [--out DIR]
+scriptix-cli package [SCRIPT.sh...] [--content FILE.xml] [--type deb,rpm,aixrpm,aix] [--out DIR]
 scriptix-cli matrix RESULTS... [--out F.csv]
 scriptix-cli version
 ```
@@ -233,7 +279,7 @@ Commands that read SCAP content also take `--tailoring FILE`, `--set NAME=VALUE`
 ## Project layout
 
 ```
-src/ScriptIX.Core   engine, importers, reports, view-models (no WPF), runtime.sh, oval.awk and the packages' scripts (embedded)
+src/ScriptIX.Core   engine, importers, reports, view-models (no WPF), runtime.sh, oval.awk and the packages' scripts, scap.pl included (embedded)
 src/ScriptIX.App    WPF views (MVVM, no logic in code-behind)
 src/ScriptIX.Cli    scriptix-cli.exe
 samples/            sample_rules.csv, sample_commands.txt
