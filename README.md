@@ -1,12 +1,17 @@
 # ScriptIX
 
-**Hardening scripts for Linux, AIX and every other Unix.**
+**Check and harden Linux, AIX and other Unix servers: CIS and SCAP scans, reports and fixes.**
 
-ScriptIX is a Windows app (and a command line tool) that turns a benchmark (CIS, STIG, SCAP) or your own list of
-commands into **one plain POSIX `sh` script**. You copy that script to the server and run it there. It checks or
-hardens the server, backs up every file its helpers change, logs every command with its output and exit code,
-and writes a CSV you bring back to the app for a report. The scripts run on the server, not on your PC.
+ScriptIX has two parts. Use either one, or both:
 
+- **The Windows app** (with a command line tool) turns a benchmark (CIS PDF, STIG or SCAP) or your own list of commands
+  into **one plain POSIX `sh` script**, runs it on your servers over SSH, and makes the reports (PDF, Word, Excel, HTML...).
+  Nothing has to be installed on the servers.
+- **The `scriptix` package** (`.deb`, `.rpm`, AIX `.rpm` and `.bff`) is a scanner on the server itself, used like OpenSCAP:
+  give it a SCAP file and it scans, reports and fixes, scans every day, and scans other servers over SSH. No Windows needed.
+
+Both make the same check scripts. A check only reads. A fix asks first, backs up every file its helpers change, and logs
+every command with its output and exit code.
 ## Build and start
 
 | File        | What it does |
